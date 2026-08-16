@@ -1,5 +1,5 @@
 /**
- * dsh-vision-skill framework integration test.
+ * dsh-vision-plugin framework integration test.
  *
  * Loads the plugin the way the Harness framework does — a real Cordis Context,
  * the real ToolRuntime tools registry (with a minimal systemPrompt stub for

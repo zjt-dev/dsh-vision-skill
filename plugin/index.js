@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * dsh-vision-skill — DeepSeek Harness plugin bundle.
+ * dsh-vision-plugin — DeepSeek Harness plugin bundle.
  *
  * Registers two model-facing tools backed by the ds-vision-skill PowerShell
  * scripts (shipped in ./scripts, or pointed at by the `scriptsDir` config):
@@ -30,7 +30,7 @@
  * `hello-plugin` tutorial) so a git install needs no `prepare` build and a
  * local checkout loads immediately.
  *
- * @module dsh-vision-skill
+ * @module dsh-vision-plugin
  */
 
 import { spawn } from 'node:child_process'
@@ -41,7 +41,7 @@ import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 
 /** Plugin identity. */
-export const name = 'dsh-vision-skill'
+export const name = 'dsh-vision-plugin'
 
 /**
  * Required services. Cordis waits for the tool registry before `apply` runs.
@@ -308,7 +308,7 @@ export function apply(ctx, config = {}) {
 function resolveScriptsDir(configured) {
   if (configured) {
     if (typeof configured !== 'string' || configured.trim() === '') {
-      throw new Error('dsh-vision-skill: "scriptsDir" must be a non-empty absolute path')
+      throw new Error('dsh-vision-plugin: "scriptsDir" must be a non-empty absolute path')
     }
     return resolve(configured)
   }

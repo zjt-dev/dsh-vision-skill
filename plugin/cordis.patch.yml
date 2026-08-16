@@ -1,4 +1,4 @@
-# dsh-vision-skill bundle patch.
+# dsh-vision-plugin bundle patch.
 #
 # This patch layer inserts the plugin row into the composition. Applied after
 # the base bundle's insert when a profile lists this bundle in
@@ -15,7 +15,7 @@
 
 - insert:
     - id: vision-skill
-      name: dsh-vision-skill
+      name: dsh-vision-plugin
       config:
         # Absolute path to the directory holding the vision PowerShell
         # scripts. Defaults to the `scripts/` folder shipped inside this

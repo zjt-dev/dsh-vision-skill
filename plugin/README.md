@@ -1,4 +1,4 @@
-# dsh-vision-skill
+# dsh-vision-plugin
 
 A **DeepSeek Harness plugin bundle** that gives text-first agents a vision layer:
 image reasoning, OCR extraction, and document parsing, delivered as two
@@ -43,14 +43,14 @@ Alternatives for distributing the bundle:
 
 ```sh
 # from a git host (shallow sources; the bundle is plain ESM so no build step)
-dsh plugin --profile web add github:you/dsh-vision-skill#<sha>
+dsh plugin --profile web add github:you/dsh-vision-plugin#<sha>
 
 # from a packed tarball
 pnpm pack            # inside plugin/
-dsh plugin --profile web add ./dsh-vision-skill-0.1.0.tgz
+dsh plugin --profile web add ./dsh-vision-plugin-0.1.0.tgz
 ```
 
-To remove: `dsh plugin --profile web remove dsh-vision-skill`.
+To remove: `dsh plugin --profile web remove dsh-vision-plugin`.
 
 ### Try it without touching a profile
 

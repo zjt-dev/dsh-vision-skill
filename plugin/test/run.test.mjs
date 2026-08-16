@@ -1,5 +1,5 @@
 /**
- * dsh-vision-skill plugin integration test.
+ * dsh-vision-plugin plugin integration test.
  *
  * Loads the real plugin entry with a stubbed `ctx.tools` registry (the only
  * service the plugin consumes), then exercises the registered tools for real:
@@ -48,7 +48,7 @@ const ctx = {
 const plugin = await import('../index.js')
 
 // ── surface checks ─────────────────────────────────────────────────────────
-assert.equal(plugin.name, 'dsh-vision-skill')
+assert.equal(plugin.name, 'dsh-vision-plugin')
 assert.deepEqual(plugin.inject, ['tools'])
 assert.ok(plugin.Config, 'Config schema is exported')
 assert.equal(typeof plugin.apply, 'function', 'apply is exported')

@@ -1,5 +1,5 @@
 {
-  "name": "dsh-vision-skill",
+  "name": "dsh-vision-plugin",
   "version": "0.1.0",
   "description": "Vision capability bundle for DeepSeek Harness: image reasoning, OCR, and document parsing tools backed by the ds-vision-skill PowerShell scripts.",
   "type": "module",
