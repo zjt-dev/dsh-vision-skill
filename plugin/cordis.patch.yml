@@ -1,0 +1,33 @@
+# dsh-vision-skill bundle patch.
+#
+# This patch layer inserts the plugin row into the composition. Applied after
+# the base bundle's insert when a profile lists this bundle in
+# `dsh.profile.bundles` (or when passed via `--patch <path>`), and before the
+# profile's own cordis.patch.yml.
+#
+# The plugin registers the `vision` and `vision_preflight` tools into the
+# global tools registry, so every agent in the composition can call them.
+# A later patch layer (the profile's own cordis.patch.yml, for example) can
+# override the row by id, restating any key it wants to keep.
+#
+# All config fields are optional — the plugin's Schemastery schema fills
+# defaults. Uncomment and adjust only what this deployment needs.
+
+- insert:
+    - id: vision-skill
+      name: dsh-vision-skill
+      config:
+        # Absolute path to the directory holding the vision PowerShell
+        # scripts. Defaults to the `scripts/` folder shipped inside this
+        # bundle — only needed to point at a separate checkout.
+        # scriptsDir: 'C:\\path\\to\\ds-vision-skill\\scripts'
+
+        # PowerShell executable used to run the scripts.
+        # pwsh: 'powershell.exe'
+
+        # Defaults the `vision` tool applies when the model omits a value.
+        # defaultIntent: 'auto'
+        # defaultMaxTokens: 1024
+        # defaultTimeoutSec: 90
+        # preflightTimeoutSec: 60
+        # enablePreflight: true

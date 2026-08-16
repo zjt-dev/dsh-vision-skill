@@ -1,0 +1,41 @@
+{
+  "name": "dsh-vision-skill",
+  "version": "0.1.0",
+  "description": "Vision capability bundle for DeepSeek Harness: image reasoning, OCR, and document parsing tools backed by the ds-vision-skill PowerShell scripts.",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "node --check index.js",
+    "test": "node test/run.test.mjs"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.18.1"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "plugin",
+    "bundle",
+    "vision",
+    "ocr",
+    "image",
+    "screenshot",
+    "pdf"
+  ],
+  "license": "MIT"
+}
