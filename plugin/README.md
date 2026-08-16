@@ -1,5 +1,7 @@
 # dsh-vision-plugin
 
+> **English** · [中文文档](README.zh-CN.md)
+
 A **DeepSeek Harness plugin bundle** that gives text-first agents a vision layer:
 image reasoning, OCR extraction, and document parsing, delivered as two
 model-callable tools backed by the [ds-vision-skill](https://github.com/Sorwcyra/ds-vision-skill)
