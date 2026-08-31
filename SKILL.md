@@ -6,7 +6,7 @@ metadata:
 description: >
   为纯文本推理模型补充视觉能力。用户提供图片、截图、照片、图表、UI 截图、代码截图、数学题图片、
   扫描件、PDF 或文档，并要求描述、理解、推理、阅读、OCR、提取文字、解析图表或分析内容时使用。
-  默认调用 scripts/vision-router.ps1 做自动路由：图片理解先走免费竞速池 GLM/Agnes，再走 custom-1/custom-2/custom-3/local，文档解析走 MinerU，
+  默认调用 scripts/vision-router.ps1 做自动路由：图片理解先走免费竞速池 GLM/Agnes/Gemini，再走 custom-1/custom-2/custom-3/local，文档解析走 MinerU，
   纯文字识别走 Baidu OCR 或 Windows OCR。所有工具输出标准 JSON，再交给主模型推理和总结。
 ---
 
@@ -29,22 +29,23 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/vision-router.ps
 - `-Intent auto|reason|ocr|document`：默认 `auto`。图片默认走视觉理解免费竞速池；纯 OCR 请显式使用 `-Intent ocr`。
 - `-Complex`：图表、数学、复杂 UI、代码截图、多步骤视觉推理时启用。
 - `-AccurateOcr`：票据、扫描件、低清晰度文字识别时启用百度高精度 OCR。
+- `-Channel glm|glm-thinking|agnes-2.5-flash|agnes-2.0-flash|gemini|custom|custom-1|custom-2|custom-3|local`：指定单个通道，跳过竞速池直接调用；失败时直接报错，不自动降级。仅对图片视觉推理（`-Intent reason`/`auto` 图片）生效。
 - `-MaxTokens`：限制视觉模型输出长度，默认 `1024`；`-Complex` 未显式设置时使用 `2048`。
 - `-TimeoutSec`：整场视觉竞速的最长等待时间，默认 `90` 秒。
 - `-NoCache`：跳过缓存读取，也不写入本次结果。
 
-只有在需要调试单个通道时，才直接调用底层脚本。
+只有在需要调试单个通道时，才直接调用底层脚本，或给 `vision-router.ps1` 传 `-Channel`。
 
 ## 路由规则
 
 1. PDF、论文、报告、长文档、多页扫描件：使用 `scripts/mineru-extract.ps1 -FilePath <file> -Mode flash -Json`。如果配置了 `MINERU_TOKEN` 且 flash 失败，再尝试 `-Mode extract`。
-2. 图片且需要理解/推理：使用 `scripts/vision-router.ps1`，让 `agnes-2.5-flash`、`agnes-2.0-flash`、`glm`、`glm-thinking` 四个模型同时开始竞速；谁先成功返回就采用谁的结果。如果全部失败，再降级到 `custom-1`、`custom-2`、`custom-3` 和 `local`。
+2. 图片且需要理解/推理：使用 `scripts/vision-router.ps1`，让 `agnes-2.5-flash`、`agnes-2.0-flash`、`glm`、`glm-thinking`、`gemini` 五个模型同时开始竞速；谁先成功返回就采用谁的结果。如果全部失败，再降级到 `custom-1`、`custom-2`、`custom-3` 和 `local`。
 3. 图片默认进入视觉理解免费竞速池；需要纯文字识别时显式使用 `-Intent ocr`，优先 `scripts/baidu-ocr.ps1 -ImagePath <file> -Json`；未配置或失败时用 `scripts/windows-ocr.ps1 -ImagePath <file> -Json`。
 4. 无法判断时：使用 `vision-router.ps1 -Intent auto -Complex -Json`。
 
 ## 降级链
 
-- 视觉理解：`race(agnes-2.5-flash, agnes-2.0-flash, glm, glm-thinking) -> custom-1 -> custom-2 -> custom-3 -> local`。
+- 视觉理解：`race(agnes-2.5-flash, agnes-2.0-flash, glm, glm-thinking, gemini) -> custom-1 -> custom-2 -> custom-3 -> local`。
 - 文档解析：`mineru flash -> mineru extract`。
 - OCR：`baidu-ocr -> windows-ocr -> vision reasoning`。
 - 同一通道遇到 401、403、429、网络错误或空结果时，不要反复重试；直接切换下一通道。

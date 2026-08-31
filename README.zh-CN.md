@@ -66,6 +66,9 @@ scripts\setup.cmd -SetKey -Channel glm -Key "YOUR_GLM_API_KEY" -Verify
 
 # Agnes: 同一个 key 同时启用 agnes-2.5-flash + agnes-2.0-flash
 scripts\setup.cmd -SetKey -Channel agnes-2.5-flash -Key "YOUR_AGNES_API_KEY" -Verify
+
+# Gemini: 启用 gemini-3.6-flash
+scripts\setup.cmd -SetKey -Channel gemini -Key "YOUR_GEMINI_API_KEY" -Verify
 ```
 
 仅在首次配置或诊断失败时检查环境；正常分析不要每次运行 preflight：
@@ -88,9 +91,12 @@ scripts\vision-router.cmd -Path "path\to\image.png" -Intent ocr -Json
 scripts\vision-router.cmd -Path "path\to\document.pdf" -Intent document -Json
 scripts\vision-router.cmd -Path "path\to\image.png" -Intent reason -Complex -Json
 scripts\vision-router.cmd -Path "path\to\image.png" -Intent reason -MaxTokens 512 -TimeoutSec 30 -Json
+scripts\vision-router.cmd -Path "path\to\image.png" -Channel gemini -Json
 ```
 
 `-MaxTokens` 默认 `1024`，可调低以缩短生成结果；`-TimeoutSec` 默认 `90`，控制整场竞速的最长等待时间。`-NoCache` 会同时跳过缓存读取和写入。
+
+`-Channel <name>` 会跳过竞速池，只调用指定通道（`glm`、`glm-thinking`、`agnes-2.5-flash`、`agnes-2.0-flash`、`gemini`、`custom-1/2/3` 或 `local`）；该通道失败时直接报错，不会悄悄降级到其他通道。
 
 ## 路由模型
 
@@ -102,7 +108,7 @@ flowchart LR
     R --> O["OCR<br/>Baidu OCR / Windows OCR"]
     R --> V["视觉推理"]
 
-    V --> F["免费竞速池<br/>Agnes + GLM"]
+    V --> F["免费竞速池<br/>Agnes + GLM + Gemini"]
     V --> C["第三方槽位<br/>custom-1 / custom-2 / custom-3"]
     V --> L["本地兜底<br/>Ollama / LM Studio / llama.cpp"]
 
@@ -118,12 +124,12 @@ flowchart LR
 ### 降级顺序
 
 ```text
-图片理解: race(agnes-2.5-flash, agnes-2.0-flash, glm, glm-thinking) -> custom-1 -> custom-2 -> custom-3 -> local
+图片理解: race(agnes-2.5-flash, agnes-2.0-flash, glm, glm-thinking, gemini) -> custom-1 -> custom-2 -> custom-3 -> local
 OCR: baidu-ocr -> windows-ocr -> vision reasoning
 文档解析: mineru flash -> mineru extract
 ```
 
-每次正常竞速都会让上述四个视觉模型同时开始请求，并采用第一个有效结果。
+每次正常竞速都会让上述五个视觉模型同时开始请求（未配置 key 的通道自动跳过），并采用第一个有效结果。
 
 在 `auto` 模式下，图片默认先进入视觉推理。纯 OCR 请使用 `-Intent ocr`；低清扫描件或票据类图片可以使用 `-AccurateOcr`。
 
@@ -135,6 +141,7 @@ OCR: baidu-ocr -> windows-ocr -> vision reasoning
 | 免费竞速池 | `agnes-2.0-flash` | `AGNES_API_KEY` | 备用快速视觉模型 |
 | 免费竞速池 | `glm` | `GLM_API_KEY` | 快速 GLM 视觉理解 |
 | 免费竞速池 | `glm-thinking` | `GLM_API_KEY` | 更复杂的视觉推理 |
+| 免费竞速池 | `gemini` | `GEMINI_API_KEY` | Gemini 3.6 Flash 视觉（OpenAI-compatible） |
 | 第三方槽位 | `custom-1` | `VISION_CUSTOM_1_*` | 用户自有 OpenAI-compatible 模型 |
 | 第三方槽位 | `custom-2` | `VISION_CUSTOM_2_*` | 用户自有 OpenAI-compatible 模型 |
 | 第三方槽位 | `custom-3` | `VISION_CUSTOM_3_*` | 用户自有 OpenAI-compatible 模型 |

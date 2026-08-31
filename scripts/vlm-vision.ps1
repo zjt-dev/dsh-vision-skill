@@ -5,7 +5,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$ImagePath,
     [string]$Prompt = 'Describe this image in detail.',
-    [ValidateSet('glm','glm-thinking','agnes-2.5-flash','agnes-2.0-flash','custom','custom-1','custom-2','custom-3','local')]
+    [ValidateSet('glm','glm-thinking','agnes-2.5-flash','agnes-2.0-flash','gemini','custom','custom-1','custom-2','custom-3','local')]
     [string]$Channel = 'glm',
     [string]$Model = '',
     [string]$BaseUrl = '',
@@ -46,6 +46,7 @@ $channelKeys = @{
     'glm-thinking' = Get-EnvValue 'GLM_API_KEY'
     'agnes-2.5-flash' = Get-EnvValue 'AGNES_API_KEY'
     'agnes-2.0-flash' = Get-EnvValue 'AGNES_API_KEY'
+    gemini        = Get-EnvValue 'GEMINI_API_KEY'
     custom        = Get-EnvValue 'VISION_CUSTOM_API_KEY'
     'custom-1'    = Get-EnvValue 'VISION_CUSTOM_1_API_KEY'
     'custom-2'    = Get-EnvValue 'VISION_CUSTOM_2_API_KEY'
@@ -57,6 +58,7 @@ $channelDefaults = @{
     'glm-thinking' = @{ url = if (Get-EnvValue 'GLM_BASE_URL') { Get-EnvValue 'GLM_BASE_URL' } else { 'https://open.bigmodel.cn/api/paas/v4/chat/completions' }; model = 'glm-4.1v-thinking-flash' }
     'agnes-2.5-flash' = @{ url = if (Get-EnvValue 'AGNES_BASE_URL') { Get-EnvValue 'AGNES_BASE_URL' } else { 'https://api.agnes-ai.cn/v1/chat/completions' }; model = 'agnes-2.5-flash' }
     'agnes-2.0-flash' = @{ url = if (Get-EnvValue 'AGNES_BASE_URL') { Get-EnvValue 'AGNES_BASE_URL' } else { 'https://api.agnes-ai.cn/v1/chat/completions' }; model = 'agnes-2.0-flash' }
+    gemini        = @{ url = if (Get-EnvValue 'GEMINI_BASE_URL') { Get-EnvValue 'GEMINI_BASE_URL' } else { 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' }; model = 'gemini-3.6-flash' }
     custom        = @{ url = Get-EnvValue 'VISION_CUSTOM_BASE_URL'; model = Get-EnvValue 'VISION_CUSTOM_MODEL' }
     'custom-1'    = @{ url = Get-EnvValue 'VISION_CUSTOM_1_BASE_URL'; model = Get-EnvValue 'VISION_CUSTOM_1_MODEL' }
     'custom-2'    = @{ url = Get-EnvValue 'VISION_CUSTOM_2_BASE_URL'; model = Get-EnvValue 'VISION_CUSTOM_2_MODEL' }
@@ -149,7 +151,17 @@ if ($PreparedImageDataUrlFile) {
 
 # --- cache lookup (cost optimization: reuse identical requests) ---
 $cacheDir = Join-Path $env:USERPROFILE '.ds-vision\cache'
-$imgHash = if ($preparedImage) { [string]$preparedImage.image_sha256 } else { (Get-FileHash -Algorithm SHA256 -LiteralPath $ImagePath).Hash }
+$imgHash = if ($preparedImage) {
+    [string]$preparedImage.image_sha256
+} else {
+    $hashBytes = [IO.File]::ReadAllBytes($ImagePath)
+    $hashObj = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        ([BitConverter]::ToString($hashObj.ComputeHash($hashBytes))).Replace('-', '')
+    } finally {
+        $hashObj.Dispose()
+    }
+}
 $shaObj = [System.Security.Cryptography.SHA256]::Create()
 $cacheInput = [Text.Encoding]::UTF8.GetBytes(('v2|' + $imgHash + '|' + $Prompt + '|' + $Channel + '|' + $resolvedModel + '|' + $chatUrl + '|' + $MaxTokens))
 $cacheKey = ([BitConverter]::ToString($shaObj.ComputeHash($cacheInput))).Replace('-', '').ToLower()

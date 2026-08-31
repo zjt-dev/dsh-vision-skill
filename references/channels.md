@@ -10,6 +10,7 @@
 | `glm-thinking` | 复杂视觉推理 | `https://open.bigmodel.cn/api/paas/v4/chat/completions` | `glm-4.1v-thinking-flash` | `GLM_API_KEY` | 图表、数学、复杂 UI，可用 `GLM_BASE_URL` 覆盖 |
 | `agnes-2.5-flash` | 快速视觉理解 | `https://api.agnes-ai.cn/v1/chat/completions` | `agnes-2.5-flash` | `AGNES_API_KEY` | OpenAI 兼容接口，可用 `AGNES_BASE_URL` 覆盖 |
 | `agnes-2.0-flash` | 备用快速视觉理解 | `https://api.agnes-ai.cn/v1/chat/completions` | `agnes-2.0-flash` | `AGNES_API_KEY` | OpenAI 兼容接口，可用 `AGNES_BASE_URL` 覆盖 |
+| `gemini` | 快速视觉理解 | `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` | `gemini-3.6-flash` | `GEMINI_API_KEY` | Gemini OpenAI 兼容接口，可用 `GEMINI_BASE_URL` 覆盖 |
 | `custom-1` | 第三方视觉模型槽 1 | `VISION_CUSTOM_1_BASE_URL` | `VISION_CUSTOM_1_MODEL` | `VISION_CUSTOM_1_API_KEY` | OpenAI 兼容接口 |
 | `custom-2` | 第三方视觉模型槽 2 | `VISION_CUSTOM_2_BASE_URL` | `VISION_CUSTOM_2_MODEL` | `VISION_CUSTOM_2_API_KEY` | OpenAI 兼容接口 |
 | `custom-3` | 第三方视觉模型槽 3 | `VISION_CUSTOM_3_BASE_URL` | `VISION_CUSTOM_3_MODEL` | `VISION_CUSTOM_3_API_KEY` | OpenAI 兼容接口 |
@@ -51,6 +52,7 @@ scripts\setup.cmd -Status
 scripts\setup.cmd -Help
 scripts\setup.cmd -SetKey -Channel glm -Key "YOUR_GLM_API_KEY" -Verify
 scripts\setup.cmd -SetKey -Channel agnes-2.5-flash -Key "YOUR_AGNES_API_KEY" -Verify
+scripts\setup.cmd -SetKey -Channel gemini -Key "YOUR_GEMINI_API_KEY" -Verify
 scripts\setup.cmd -SetKey -Channel baidu-ocr -Key "YOUR_BAIDU_API_KEY" -Secret "YOUR_BAIDU_SECRET_KEY" -Verify
 scripts\setup.cmd -SetCustom -Slot 1 -BaseUrl "https://example.com/v1/chat/completions" -Key "YOUR_API_KEY" -Model "YOUR_MODEL" -Verify
 scripts\setup.cmd -SetCustom -Slot 2 -BaseUrl "https://example.com/v1/chat/completions" -Key "YOUR_API_KEY" -Model "YOUR_MODEL" -Verify
@@ -80,7 +82,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\vlm-vision.ps1 -
 ## 路由优先级
 
 - `auto` 模式下，图片默认进入视觉理解免费竞速池；需要纯 OCR 时显式使用 `-Intent ocr`，或使用 `-AccurateOcr`。
-- 图片理解：`race(agnes-2.5-flash, agnes-2.0-flash, glm, glm-thinking) -> custom-1 -> custom-2 -> custom-3 -> local`
-- 复杂视觉推理：`race(agnes-2.5-flash, agnes-2.0-flash, glm, glm-thinking) -> custom-1 -> custom-2 -> custom-3 -> local`
+- 图片理解：`race(agnes-2.5-flash, agnes-2.0-flash, glm, glm-thinking, gemini) -> custom-1 -> custom-2 -> custom-3 -> local`
+- 复杂视觉推理：`race(agnes-2.5-flash, agnes-2.0-flash, glm, glm-thinking, gemini) -> custom-1 -> custom-2 -> custom-3 -> local`
 - 文档解析：`mineru flash -> mineru extract`
 - OCR：`baidu-ocr -> windows-ocr -> vision reasoning`

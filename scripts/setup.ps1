@@ -20,7 +20,7 @@ param(
     [switch]$SetCustom,
     [switch]$Verify,
     [switch]$Force,
-    [ValidateSet('glm','glm-thinking','agnes-2.5-flash','agnes-2.0-flash','baidu-ocr','custom','custom-1','custom-2','custom-3')]
+    [ValidateSet('glm','glm-thinking','agnes-2.5-flash','agnes-2.0-flash','gemini','baidu-ocr','custom','custom-1','custom-2','custom-3')]
     [string]$Channel = '',
     [string]$Key = '',
     [string]$Secret = '',
@@ -74,6 +74,7 @@ $channels = @{
     'glm-thinking' = @{ envs = @('GLM_API_KEY'); name = 'Zhipu GLM-4.1V-Thinking-Flash (complex)'; signup = 'https://open.bigmodel.cn/' }
     'agnes-2.5-flash' = @{ envs = @('AGNES_API_KEY'); name = 'Agnes 2.5 Flash (OpenAI-compatible vision)'; signup = 'https://api.agnes-ai.cn/v1/chat/completions' }
     'agnes-2.0-flash' = @{ envs = @('AGNES_API_KEY'); name = 'Agnes 2.0 Flash (OpenAI-compatible vision)'; signup = 'https://api.agnes-ai.cn/v1/chat/completions' }
+    gemini        = @{ envs = @('GEMINI_API_KEY'); name = 'Google Gemini 3.6 Flash (OpenAI-compatible vision)'; signup = 'https://aistudio.google.com/apikey' }
     'baidu-ocr'   = @{ envs = @('BAIDU_API_KEY','BAIDU_SECRET_KEY'); name = 'Baidu OCR (general/accurate)'; signup = 'https://console.bce.baidu.com/ai/#/ai/ocr/app/list' }
 }
 
@@ -124,6 +125,7 @@ function Show-Status {
         Write-Output ("- custom-{0} [third-party slot]: {1}" -f $slotId, $(if ($customOk) { 'configured' } else { 'dormant' }))
     }
     Write-Output ("- agnes base url: {0}" -f $(if (Get-EnvValue 'AGNES_BASE_URL') { Get-EnvValue 'AGNES_BASE_URL' } else { 'https://api.agnes-ai.cn/v1/chat/completions (default)' }))
+    Write-Output ("- gemini base url: {0}" -f $(if (Get-EnvValue 'GEMINI_BASE_URL') { Get-EnvValue 'GEMINI_BASE_URL' } else { 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions (default)' }))
     Write-Output ''
     Write-Output '### Local'
     Write-Output ("- llmfit: {0}" -f $(if (Get-Command llmfit -ErrorAction SilentlyContinue) { 'OK' } else { 'not found (uv tool install llmfit)' }))
@@ -131,7 +133,7 @@ function Show-Status {
     Write-Output ''
     Write-Output '### Next steps'
     Write-Output '- Run "scripts\setup.cmd -Help" for registration links and cmd.exe-safe commands.'
-    Write-Output '- First configure free race channels: glm and agnes-2.5-flash.'
+    Write-Output '- First configure free race channels: glm, agnes-2.5-flash and gemini.'
     Write-Output '- Optional third-party slots: scripts\setup.cmd -SetCustom -Slot 1 -BaseUrl "URL" -Key "YOUR_KEY" -Model "MODEL"'
 }
 
@@ -149,7 +151,9 @@ function Show-Help {
         Write-Output ("### {0} ({1})" -f $c, $info.name)
         Write-Output ("- Sign up: {0}" -f $info.signup)
         Write-Output ("- Env vars: {0}" -f ($info.envs -join ' + '))
-        $base = if ($c -like 'agnes-*') { ' -BaseUrl "https://api.agnes-ai.cn/v1/chat/completions"' } else { '' }
+        $base = ''
+        if ($c -like 'agnes-*') { $base = ' -BaseUrl "https://api.agnes-ai.cn/v1/chat/completions"' }
+        elseif ($c -eq 'gemini') { $base = ' -BaseUrl "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"' }
         Write-Output ("- Enable: scripts\setup.cmd -SetKey -Channel {0} -Key ""YOUR_{1}""{2}{3} -Verify" -f $c, $info.envs[0], $secret, $base)
         Write-Output ''
     }
@@ -165,12 +169,13 @@ function Show-Help {
 
 function Do-SetKey {
     if (-not $Channel -or $Channel -eq 'custom') {
-        Write-Error 'SetKey requires -Channel glm|glm-thinking|agnes-2.5-flash|agnes-2.0-flash|baidu-ocr (use -SetCustom for the custom relay).'
+        Write-Error 'SetKey requires -Channel glm|glm-thinking|agnes-2.5-flash|agnes-2.0-flash|gemini|baidu-ocr (use -SetCustom for the custom relay).'
         exit 1
     }
     $info = $channels[$Channel]
     if (-not $Key) { Write-Error '-Key is required.'; exit 1 }
     if ($Channel -like 'agnes-*' -and $BaseUrl) { Set-Item -Path 'Env:AGNES_BASE_URL' -Value $BaseUrl }
+    if ($Channel -eq 'gemini' -and $BaseUrl) { Set-Item -Path 'Env:GEMINI_BASE_URL' -Value $BaseUrl }
     if ($info.envs.Count -gt 1 -and -not $Secret) {
         Write-Error ("{0} also requires -Secret ({1})." -f $Channel, $info.envs[1])
         exit 1
@@ -194,6 +199,10 @@ function Do-SetKey {
     if ($Channel -like 'agnes-*' -and $BaseUrl) {
         Set-EnvUser 'AGNES_BASE_URL' $BaseUrl
         Write-Output ("Saved AGNES_BASE_URL={0} (User scope)" -f $BaseUrl)
+    }
+    if ($Channel -eq 'gemini' -and $BaseUrl) {
+        Set-EnvUser 'GEMINI_BASE_URL' $BaseUrl
+        Write-Output ("Saved GEMINI_BASE_URL={0} (User scope)" -f $BaseUrl)
     }
     if ($Verify) { Write-Output 'Verification: OK' }
 }

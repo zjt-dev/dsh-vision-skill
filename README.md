@@ -66,6 +66,9 @@ scripts\setup.cmd -SetKey -Channel glm -Key "YOUR_GLM_API_KEY" -Verify
 
 # Agnes enables both agnes-2.5-flash and agnes-2.0-flash
 scripts\setup.cmd -SetKey -Channel agnes-2.5-flash -Key "YOUR_AGNES_API_KEY" -Verify
+
+# Gemini enables gemini-3.6-flash
+scripts\setup.cmd -SetKey -Channel gemini -Key "YOUR_GEMINI_API_KEY" -Verify
 ```
 
 Check your environment once during setup or when diagnosing a failure. Do not run preflight before every normal analysis:
@@ -88,9 +91,12 @@ scripts\vision-router.cmd -Path "path\to\image.png" -Intent ocr -Json
 scripts\vision-router.cmd -Path "path\to\document.pdf" -Intent document -Json
 scripts\vision-router.cmd -Path "path\to\image.png" -Intent reason -Complex -Json
 scripts\vision-router.cmd -Path "path\to\image.png" -Intent reason -MaxTokens 512 -TimeoutSec 30 -Json
+scripts\vision-router.cmd -Path "path\to\image.png" -Channel gemini -Json
 ```
 
 `-MaxTokens` defaults to `1024` and can be lowered for shorter generations. `-TimeoutSec` defaults to `90` and caps the whole race. `-NoCache` skips both cache reads and writes.
+
+`-Channel <name>` bypasses the race and calls exactly one channel (`glm`, `glm-thinking`, `agnes-2.5-flash`, `agnes-2.0-flash`, `gemini`, `custom-1/2/3`, or `local`); if that channel fails, the router reports the error instead of silently falling back.
 
 ## Routing Model
 
@@ -102,7 +108,7 @@ flowchart LR
     R --> O["OCR<br/>Baidu OCR / Windows OCR"]
     R --> V["Visual reasoning"]
 
-    V --> F["Free race pool<br/>Agnes + GLM"]
+    V --> F["Free race pool<br/>Agnes + GLM + Gemini"]
     V --> C["Third-party slots<br/>custom-1 / custom-2 / custom-3"]
     V --> L["Local fallback<br/>Ollama / LM Studio / llama.cpp"]
 
@@ -118,12 +124,12 @@ flowchart LR
 ### Fallback Order
 
 ```text
-image reasoning: race(agnes-2.5-flash, agnes-2.0-flash, glm, glm-thinking) -> custom-1 -> custom-2 -> custom-3 -> local
+image reasoning: race(agnes-2.5-flash, agnes-2.0-flash, glm, glm-thinking, gemini) -> custom-1 -> custom-2 -> custom-3 -> local
 ocr: baidu-ocr -> windows-ocr -> vision reasoning
 document: mineru flash -> mineru extract
 ```
 
-All four named vision models start concurrently in each normal race; the first valid response wins.
+All five named vision models start concurrently in each normal race (channels whose API key is missing are skipped); the first valid response wins.
 
 In `auto` mode, image files go to visual reasoning first. Use `-Intent ocr` for OCR-only extraction, or `-AccurateOcr` for scanned and low-quality text images.
 
@@ -135,6 +141,7 @@ In `auto` mode, image files go to visual reasoning first. Use `-Intent ocr` for 
 | Free race pool | `agnes-2.0-flash` | `AGNES_API_KEY` | backup fast vision |
 | Free race pool | `glm` | `GLM_API_KEY` | fast GLM visual understanding |
 | Free race pool | `glm-thinking` | `GLM_API_KEY` | deeper visual reasoning |
+| Free race pool | `gemini` | `GEMINI_API_KEY` | Gemini 3.6 Flash vision (OpenAI-compatible) |
 | Third-party slots | `custom-1` | `VISION_CUSTOM_1_*` | user-owned OpenAI-compatible model |
 | Third-party slots | `custom-2` | `VISION_CUSTOM_2_*` | user-owned OpenAI-compatible model |
 | Third-party slots | `custom-3` | `VISION_CUSTOM_3_*` | user-owned OpenAI-compatible model |

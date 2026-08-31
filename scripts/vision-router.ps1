@@ -5,6 +5,8 @@ param(
     [Parameter(Mandatory = $true)][string]$Path,
     [ValidateSet('auto','reason','ocr','document')]
     [string]$Intent = 'auto',
+    [ValidateSet('glm','glm-thinking','agnes-2.5-flash','agnes-2.0-flash','gemini','custom','custom-1','custom-2','custom-3','local')]
+    [string]$Channel = '',
     [string]$Prompt = 'Analyze this visual input and return the useful content.',
     [switch]$Complex,
     [switch]$AccurateOcr,
@@ -152,6 +154,16 @@ function Get-RaceChannelConfig([string]$Name) {
             url = Get-ChatUrl $base
             model = 'agnes-2.0-flash'
             key = Get-EnvValue 'AGNES_API_KEY'
+        }
+    }
+    if ($Name -eq 'gemini') {
+        $base = Get-EnvValue 'GEMINI_BASE_URL'
+        if (-not $base) { $base = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' }
+        return [pscustomobject]@{
+            name = $Name
+            url = Get-ChatUrl $base
+            model = 'gemini-3.6-flash'
+            key = Get-EnvValue 'GEMINI_API_KEY'
         }
     }
     return $null
@@ -545,6 +557,32 @@ if ($Intent -eq 'reason') {
     $effectiveMaxTokens = $MaxTokens
     if ($Complex -and -not $PSBoundParameters.ContainsKey('MaxTokens')) { $effectiveMaxTokens = 2048 }
 
+    # Explicit single-channel request: bypass the race and do not silently fall back.
+    if ($Channel) {
+        if ($NoCache) {
+            $attempts += Run-Step $Channel { & $vlm -ImagePath $Path -Prompt $Prompt -Json -NoCache -Channel $Channel -MaxTokens $effectiveMaxTokens -TimeoutSec $TimeoutSec }
+        } else {
+            $attempts += Run-Step $Channel { & $vlm -ImagePath $Path -Prompt $Prompt -Json -Channel $Channel -MaxTokens $effectiveMaxTokens -TimeoutSec $TimeoutSec }
+        }
+        if ($attempts[-1].code -eq 0) { Write-Output $attempts[-1].text; exit 0 }
+        $last = if ($attempts.Count) { $attempts[-1].text } else { 'No route was available.' }
+        if ($Json) {
+            [ordered]@{
+                task_type  = $Intent
+                tool_used  = 'vision-router'
+                confidence = 'low'
+                result     = ''
+                metadata   = [ordered]@{
+                    error    = $last
+                    attempts = @($attempts | ForEach-Object { [ordered]@{ name = $_.name; code = $_.code; message = $_.text } })
+                }
+            } | ConvertTo-Json -Depth 8 -Compress | Write-Output
+        } else {
+            Write-Output $last
+        }
+        exit 1
+    }
+
     $raceChannels = @()
     if (Get-EnvValue 'AGNES_API_KEY') {
         $raceChannels += 'agnes-2.5-flash'
@@ -553,6 +591,9 @@ if ($Intent -eq 'reason') {
     if (Get-EnvValue 'GLM_API_KEY') {
         $raceChannels += 'glm'
         $raceChannels += 'glm-thinking'
+    }
+    if (Get-EnvValue 'GEMINI_API_KEY') {
+        $raceChannels += 'gemini'
     }
 
     if ($raceChannels.Count -gt 0) {
